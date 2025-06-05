@@ -1,0 +1,12 @@
+<launch>
+  <!-- Configurable parameters -->
+  <arg name="device_index" default="2" />
+  <arg name="duration" default="5" />
+  <arg name="samplerate" default="48000" />
+
+  <!-- Start mic node -->
+  <node name="mic_node" pkg="mic_to_whisper" type="mic_node.py" output="screen"/>
+  <!-- Start Whisper node -->
+  <node name="whisper_node" pkg="mic_to_whisper" type="whisper_node.py" output="screen" />
+
+</launch>
