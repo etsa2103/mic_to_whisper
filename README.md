@@ -25,3 +25,5 @@ To view the full transcription as it updates run the following:
 
 ### Notes
 make sure the mic you are using is not set as the computers active input or output device. This gave me problems
+
+important to resample audio back to 16 kHz for whisper to work well.
