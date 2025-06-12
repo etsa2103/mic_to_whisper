@@ -9,8 +9,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package()
 
 catkin_install_python(PROGRAMS
-  scripts/mic_node.py
-  scripts/whisper_node.py
-  scripts/transcription_viewer_node.py
+  src/mic_node.py
+  src/whisper_node.py
+  src/transcription_viewer_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

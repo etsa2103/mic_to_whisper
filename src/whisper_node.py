@@ -5,7 +5,7 @@ from std_msgs.msg import String, Int16MultiArray
 import numpy as np
 import whisper
 
-model = whisper.load_model("base")
+model = whisper.load_model("tiny")
 sample_rate = rospy.get_param('sample_rate', 16000)
 
 class WhisperTranscriber:

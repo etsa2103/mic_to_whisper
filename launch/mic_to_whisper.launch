@@ -1,6 +1,6 @@
 <launch>
   <!-- Configurable parameters -->
-  <param name="device_index" value="5"/>
+  <param name="device_index" value="6"/>
   <param name="sample_rate" value="48000"/>
   <param name="channels" value="1"/>
 
