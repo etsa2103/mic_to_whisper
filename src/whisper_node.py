@@ -10,15 +10,21 @@ sample_rate = rospy.get_param('sample_rate', 16000)
 
 class WhisperTranscriber:
     def __init__(self):
+        # Initialize the whisper transcriber node
         rospy.init_node('whisper_node')
-        self.pub = rospy.Publisher('/transcribed_text', String, queue_size=10)
         self.transcribed_text = ""  # For accumulating transcriptions
+        
+        
+        # Setup publisher and subscriber
+        self.pub = rospy.Publisher('/whisperer/text', String, queue_size=10) # might want to change this to mic_to_whisper/text
         rospy.Subscriber('/mic_audio', Int16MultiArray, self.callback)
-        rospy.loginfo("Whisper transcriber node started.")
+        
+        # Log startup and wait for mic to send audio
+        rospy.loginfo("[WHISPER NODE]: Whisper transcriber node started. Waiting for audio chunk...")
         rospy.spin()
 
     def callback(self, msg):
-        rospy.loginfo("Transcribing audio chunk...")
+        rospy.loginfo("[WHISPER NODE]: Transcribing audio chunk...")
         # Extract audio from message and resample to 16khz
         audio = np.array(msg.data, dtype=np.int16).astype(np.float32) / 32768.0
         audio = scipy.signal.resample_poly(audio, 16000, sample_rate)

@@ -1,36 +1,49 @@
 #!/usr/bin/env python3
 import rospy
 import sounddevice as sd
-from std_msgs.msg import Int16MultiArray
+from std_msgs.msg import Int16MultiArray, UInt8
 
-def mic_stream():
-    # Setup
-    device_index = rospy.get_param('device_index', 0)
-    sample_rate = rospy.get_param('sample_rate', 48000)
-    channels = rospy.get_param('channels', 1)
-    duration = 5
-    chunk_size = int(duration * sample_rate)
+class microphone:
+    def __init__(self):
+        # Initialize the microphone node
+        rospy.init_node('mic_node')
+        self.speaking_time = 0
+        self.device_index = rospy.get_param('device_index', 0)
+        self.sample_rate = rospy.get_param('sample_rate', 48000)
+        self.channels = rospy.get_param('channels', 1)
+        self.duration = 10
+        self.chunk_size = int(self.duration * self.sample_rate)
 
-    # Init
-    rospy.init_node('mic_node')
-    rospy.loginfo("mic node started.")
-    pub = rospy.Publisher('/mic_audio', Int16MultiArray, queue_size=10)
-    rospy.loginfo("Recording from device %d for %d seconds", device_index, duration)
+        # Setup publisher and subscriber
+        self.pub = rospy.Publisher('/mic_audio', Int16MultiArray, queue_size=10)
+        rospy.Subscriber("/jackal_teleop/trigger", UInt8, self.callback)
 
-    # Recording loop
-    while not rospy.is_shutdown():
+        # Log startup and wait for trigger
+        rospy.loginfo("[MIC NODE]: mic node started. Waiting for trigger...")
+        rospy.spin()
+        
+    def callback(self, msg : UInt8) -> None:
         try:
-            # Record audio from mic
-            audio = sd.rec(chunk_size, samplerate=sample_rate,
-                           channels=channels, 
-                           dtype='int16', 
-                           device=device_index) 
-            sd.wait()
-            # Publish audio as an array of int16 data
-            msg = Int16MultiArray(data=audio.flatten().tolist())
-            pub.publish(msg)
+            self.speaking_time = msg.data
+            if self.speaking_time > 0:
+                # Recording audio chunk
+                rospy.loginfo("[MIC NODE]: Waiting %d seconds", self.speaking_time)
+                # Wait for speaker to finish speaking
+                rospy.sleep(self.speaking_time)
+                # Record audio using sounddevice
+                rospy.loginfo("[MIC NODE]: Recording from device %d for %d seconds", self.device_index, self.duration)
+                audio = sd.rec(self.chunk_size, samplerate=self.sample_rate,
+                            channels=self.channels,
+                            dtype='int16',
+                            device=self.device_index)
+                sd.wait()
+                msg = Int16MultiArray(data=audio.flatten().tolist())
+                self.pub.publish(msg)
+                rospy.loginfo("[MIC NODE]: Recording complete and published.")
         except Exception as e:
             rospy.logerr(f"Error: {e}")
+            rospy.loginfo("[MIC NODE]: Error occured. Waiting for trigger again...")
 
 if __name__ == '__main__':
-    mic_stream()
+    microphone()
+    
