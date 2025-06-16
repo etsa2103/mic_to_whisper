@@ -14,6 +14,7 @@ class WhisperTranscriber:
         self.sample_rate = rospy.get_param('sample_rate', 48000)
         self.waiting_time = 3
         self.buffer_seconds = 10
+        self.buffering = False
         self.buffer_size = self.sample_rate * self.buffer_seconds
         self.audio_buffer = deque(maxlen=self.buffer_size)
 
@@ -26,15 +27,13 @@ class WhisperTranscriber:
         rospy.spin()
         
     def audio_callback(self, msg):
-        audio_chunk = np.array(msg.data, dtype=np.int16)
-        self.audio_buffer.extend(audio_chunk)
+        if self.buffering:
+            audio_chunk = np.array(msg.data, dtype=np.int16)
+            self.audio_buffer.extend(audio_chunk)
         
-    def trigger_callback(self, msg):
-        if len(self.audio_buffer) < self.buffer_size:
-            rospy.logwarn("[WHISPER NODE]: Not enough audio buffered yet.")
-            return
-        
+    def trigger_callback(self, msg):    
         if msg.data > 0:
+            self.buffering = True
             rospy.loginfo("[WHISPER NODE]: Trigger received. Waiting for speaker to finish speaking.")
             rospy.sleep(self.waiting_time)
             rospy.loginfo("[WHISPER NODE]: Transcribing the next 10 seconds of audio.")
@@ -52,6 +51,7 @@ class WhisperTranscriber:
                     self.pub.publish(text)
             except Exception as e:
                 rospy.logerr(f"[WHISPER NODE]: Transcription failed: {e}")
+            self.buffering = False
 
 if __name__ == '__main__':
     WhisperTranscriber()
